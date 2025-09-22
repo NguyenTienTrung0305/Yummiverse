@@ -1,0 +1,69 @@
+detection_model:
+  name: "yolov8s"
+  pretrained: True
+  classes: 18
+
+freshness_model:
+  type: "resnet"
+  name: "resnet50"
+  pretrained: True
+  classes: 3
+  input_size: 224
+
+training:
+  detection:
+    epochs: 300
+    batch_size: 32
+    img_size: 640
+    patience: 50
+
+  freshness:
+    epochs: 100
+    batch_size: 64
+    img_size: 224
+    patience: 20
+
+  device: "auto"
+  workers: 8
+
+# Data Paths
+data:
+  detection_data: "data_detection.yaml"
+  freshness_data: "datasets/freshness/"
+
+# Optimizer
+optimizer:
+  detection:
+    name: "AdamW"
+    lr0: 0.01
+    weight_decay: 0.0005
+
+  freshness:
+    name: "AdamW"
+    lr0: 0.001
+    weight_decay: 0.0001
+
+# Augmentation
+augmentation:
+  detection:
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    degrees: 15.0
+    fliplr: 0.5
+    mosaic: 1.0
+
+  freshness:
+    rotation: 15
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.3 # Important for freshness
+    hue: 0.05
+    horizontal_flip: 0.5
+
+# Inference
+inference:
+  detection_conf: 0.5
+  detection_iou: 0.7
+  freshness_conf: 0.8
+  crop_margin: 0.1 # Expand crop box by 10%
