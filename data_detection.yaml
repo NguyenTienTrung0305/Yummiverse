@@ -1,0 +1,45 @@
+train: ./datasets/food_detection/images/train
+val: ./datasets/food_detection/images/val
+test: ./datasets/food_detection/images/test
+
+nc: 18
+
+names:
+  0: apple
+  1: banana
+  2: broccoli
+  3: carrot
+  4: chicken
+  5: rice
+  6: tomato
+  7: lettuce
+  8: bread
+  9: milk
+  10: cheese
+  11: fish
+  12: beef
+  13: pasta
+  14: orange
+  15: potato
+  16: onion
+  17: egg
+
+vietnamese_names:
+  0: táo
+  1: chuối
+  2: bông_cải_xanh
+  3: cà_rốt
+  4: thịt_gà
+  5: gạo
+  6: cà_chua
+  7: rau_xà_lách
+  8: bánh_mì
+  9: sữa
+  10: pho_mát
+  11: cá
+  12: thịt_bò
+  13: mì_ống
+  14: cam
+  15: khoai_tây
+  16: hành_tây
+  17: trứng
