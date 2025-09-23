@@ -74,9 +74,9 @@ augmentation:
 
 # Inference
 inference:
-  detection_conf: 0.4
+  detection_confi: 0.4
   detection_iou: 0.5
-  freshness_conf: 0.8
-  crop_margin: 0.08 # expand crop box by 10%
+  freshness_confi: 0.8
+  crop_margin: 0.08 # expand crop box by 8%
   tta: true
   ensemble_folds: true 
