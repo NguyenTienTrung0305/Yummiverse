@@ -4,8 +4,8 @@ detection_model:
   classes: 18
 
 freshness_model:
-  type: "resnet"
-  name: "resnet50"
+  type: "timm"
+  name: "efficientnet_b2"
   pretrained: True
   classes: 3
   input_size: 224
@@ -25,6 +25,8 @@ training:
 
   device: "auto"
   workers: 8
+  seed: 42
+  folds: 5
 
 # Data Paths
 data:
@@ -53,17 +55,28 @@ augmentation:
     fliplr: 0.5
     mosaic: 1.0
 
+    # turn on if have few data
+    mixup: 0.1
+    copy_paste: 0.1
+
   freshness:
     rotation: 15
     brightness: 0.2
     contrast: 0.2
-    saturation: 0.3 # Important for freshness
-    hue: 0.05
+    saturation: 0.15 # important for freshness
+    hue: 0.03
     horizontal_flip: 0.5
+    vertical_flip: 0.1
+    blur_prob: 0.12     
+    noise_prob: 0.10
+    shadow_prob: 0.10
+    coarse_dropout_prob: 0.05
 
 # Inference
 inference:
-  detection_conf: 0.5
-  detection_iou: 0.7
-  freshness_conf: 0.8
-  crop_margin: 0.1 # Expand crop box by 10%
+  detection_confi: 0.4
+  detection_iou: 0.5
+  freshness_confi: 0.8
+  crop_margin: 0.08 # expand crop box by 8%
+  tta: true
+  ensemble_folds: true 
