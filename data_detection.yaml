@@ -18,11 +18,11 @@ names:
   10: cheese
   11: fish
   12: beef
-  13: pasta
-  14: orange
-  15: potato
-  16: onion
-  17: egg
+  13: orange
+  14: potato
+  15: onion
+  16: egg
+  17: pork
 
 vietnamese_names:
   0: táo
@@ -38,8 +38,8 @@ vietnamese_names:
   10: pho_mát
   11: cá
   12: thịt_bò
-  13: mì_ống
-  14: cam
-  15: khoai_tây
-  16: hành_tây
-  17: trứng
+  13: cam
+  14: khoai_tây
+  15: hành_tây
+  16: trứng
+  17: thịt_lợn
