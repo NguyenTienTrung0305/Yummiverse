@@ -1,12 +1,32 @@
 import os
 import shutil
 
-def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
-    if os.path.exists(dst_root):
-        shutil.rmtree(dst_root)
-    os.makedirs(dst_root)
+def get_unique_prefix(dst_root, prefix):
+    base_prefix = prefix
+    counter = 1
+    exts = [".jpg", ".jpeg", ".png"]
 
-    for split in ["train", "val", "test"]:
+    while True:
+        exists = False
+        for ext in exts:
+            test_file = os.path.join(dst_root, "train", "images", f"{prefix}_001{ext}")
+            if os.path.exists(test_file):
+                exists = True
+                break
+        if not exists:
+            return prefix
+        counter += 1
+        prefix = f"{base_prefix}{counter}"
+    
+
+
+
+
+def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
+    os.makedirs(dst_root, exist_ok=True)
+    prefix = get_unique_prefix(dst_root, prefix)
+
+    for split in ["train", "valid", "test"]:
         img_src = os.path.join(src_root, split, "images")
         lbl_src = os.path.join(src_root, split, "labels")
 
@@ -33,6 +53,4 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
             if os.path.exists(old_lbl_path):
                 shutil.copy2(old_lbl_path, new_lbl_path)
 
-        print(f"[{split}] Done {len(images)} files")
-
-rename_and_copy_dataset("path/to/original_dataset", "path/to/renamed_dataset")
+rename_and_copy_dataset("/home/ubuntu/Downloads/egg_detection_images", "/home/ubuntu/Workspaces/Yummiverse/datasets/food_detection")
