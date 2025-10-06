@@ -67,7 +67,7 @@ augmentation:
     hue: 0.03
     horizontal_flip: 0.5
     vertical_flip: 0.1
-    blur_prob: 0.12     
+    blur_prob: 0.12
     noise_prob: 0.10
     shadow_prob: 0.10
     coarse_dropout_prob: 0.05
@@ -79,4 +79,4 @@ inference:
   freshness_confi: 0.8
   crop_margin: 0.08 # expand crop box by 8%
   tta: true
-  ensemble_folds: true 
+  ensemble_folds: true
