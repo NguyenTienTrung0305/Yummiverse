@@ -4,9 +4,14 @@ import json
 import cv2
 import numpy as np
 import math
+from PIL import Image
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
+from torchvision.datasets import ImageFolder
+
 
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -19,7 +24,7 @@ def set_seed(seed=42):
     torch.cuda.manual_seed_all(seed)
 
 
-# Tính toán trọng số lớp để xử lý mất cân bằng dữ liệu => điều chỉnh trọng số trong hàm mất mát để model chú ý hơn đến các lớp thiểu số
+# Calculate class weights to handle data imbalance => adjust weights in the loss function so that the model pays more attention to minority classes
 def compute_class_weights(labels, num_classes):
     cnt = np.bincount(labels, minlength=num_classes) # count frequency occurrence of each class
     cnt[cnt == 0] = 1 # avoid division by zero
@@ -28,10 +33,10 @@ def compute_class_weights(labels, num_classes):
     return torch.tensor(nor_weights, dtype=torch.float32)
 
 
+
 # =================================================================================================
 # Increase the diversity of training data
 # =================================================================================================
-
 
 # Create smoothed weights using Exponential Moving Average (EMA)
 # + Reduce noise in weight updates
@@ -163,3 +168,50 @@ def build_transforms(phase, img_size=224):
     else:
         return A.Compose([ A.Resize(img_size, img_size),
             A.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225)), ToTensorV2(),])
+
+
+
+# =================================================================================================
+# Dataset wrapper
+# =================================================================================================
+class AlbImageFolder(Dataset):
+    """
+        Args:
+            root: Path to image folder 
+            transform: Albumentations transform
+            samples: List of (path, label) tuples (if create subset)
+            classes: List of class names
+    """
+    def __init__(self, root=None, transform=None, samples=None, classes=None):
+        if samples is not None:
+            self.samples = samples
+            self.classes = classes
+        else:
+            if root is None:
+                raise ValueError("Must provide either root or samples")
+            imagefolder = ImageFolder(root)
+            self.samples = imagefolder.samples
+            self.classes = imagefolder.classes
+
+        self.transform = transform
+        self.targets = [s[1] for s in self.samples]  # Extract labels
+    
+
+    def __len__(self): 
+        return len(self.samples)
+    
+    def __getitem__(self, idx):
+        path, y = self.samples[idx]
+        img = np.array(Image.open(path).convert('RGB'))
+        if self.transform: 
+            img = self.transform(image=img)['image']
+        return img, y
+
+def subset_by_indices(base_ds, indices, transform):
+    subset_samples = [base_ds.samples[i] for i in indices]
+    
+    return AlbImageFolder(
+        samples=subset_samples,
+        classes=base_ds.classes,
+        transform=transform
+    )
