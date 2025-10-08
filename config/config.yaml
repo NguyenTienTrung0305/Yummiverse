@@ -22,6 +22,7 @@ training:
     batch_size: 64
     img_size: 224
     patience: 20
+    dropout: 0.3
 
   device: "auto"
   workers: 8
@@ -29,9 +30,12 @@ training:
   folds: 5
 
 # Data Paths
-data:
+paths:
   detection_data: "data_detection.yaml"
   freshness_data: "datasets/freshness/"
+  classifier_out_dir: runs/classifier
+  detection_out_dir: runs/detection
+
 
 # Optimizer
 optimizer:

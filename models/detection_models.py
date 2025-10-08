@@ -45,7 +45,7 @@ class FoodDetectionModel:
     self.detection_iou = inf_cfg.get('detection_iou', 0.5)
     self.crop_margin = inf_cfg.get('crop_margin', 0.1)
 
-    self.datayaml_path = cfg.get('data', {}).get('detection_data', 'data_detection.yaml')
+    self.datayaml_path = cfg.get('paths', {}).get('detection_data', 'data_detection.yaml')
 
   def load_model(self, model_path: Optional[Union[str, Path]] = None) -> None:
     if model_path:
@@ -292,7 +292,7 @@ if __name__ == "__main__":
 
   det = FoodDetectionModel(cfg=cfg)
   det.load_model(None)
-  det.load_class_names(data_yaml=cfg["data"]["detection_data"])
+  det.load_class_names(data_yaml=cfg["paths"]["detection_data"])
 
   best_path = det.train_with_config()
 
