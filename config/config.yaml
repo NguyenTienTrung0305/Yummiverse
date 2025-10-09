@@ -24,6 +24,16 @@ training:
     patience: 20
     dropout: 0.3
 
+    label_smoothing: 0.1
+    ema_decay: 0.999
+    amp: true   # Automatic Mixed Precision
+
+    mix_stop_ratio: 0.7 
+    use_mix: true
+    mix_type: "cutmix"  
+    mix_prob: 0.35
+    mix_alpha: 0.2
+
   device: "auto"
   workers: 8
   seed: 42
@@ -46,9 +56,13 @@ optimizer:
 
   freshness:
     name: "AdamW"
-    lr0: 0.001
+    lr_backbone: 1e-4
+    lr_head: 1e-3
+    warmup_ratio: 0.1
+    div_factor: 25.0
     weight_decay: 0.0001
 
+  
 # Augmentation
 augmentation:
   detection:
@@ -57,11 +71,11 @@ augmentation:
     hsv_v: 0.4
     degrees: 15.0
     fliplr: 0.5
-    mosaic: 1.0
 
-    # turn on if have few data
+    # turn on if have few data and in final epoch training
     mixup: 0.1
     copy_paste: 0.1
+    mosaic: 1.0
 
   freshness:
     rotation: 15
@@ -75,6 +89,7 @@ augmentation:
     noise_prob: 0.10
     shadow_prob: 0.10
     coarse_dropout_prob: 0.05
+
 
 # Inference
 inference:
