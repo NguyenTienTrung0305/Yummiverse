@@ -17,15 +17,13 @@ def parse_device(s: Optional[str]) -> Optional[str]:
     return None
   return s
 
-def expand_and_clamp_box(x1, y1, x2, y2, H, W, margin):
-  w = x2 - x1
-  h = y2 - y1
-  dx = w * margin
-  dy = h * margin
-  nx1 = max(0, np.floor(x1-dx)/2)
-  ny1 = max(0, np.floor(y1-dy)/2)
-  nx2 = min(W, np.ceil(x1+dx)/2)
-  ny2 = min(H, np.ceil(y2+dy)/2)
+def expand_and_clamp_box(x1, y1, x2, y2, W, H, margin=0.1):
+  w, h = x2 - x1, y2 - y1
+  dx, dy = w * margin, h * margin
+  nx1 = max(0, int(np.floor(x1 - dx)))
+  ny1 = max(0, int(np.floor(y1 - dy)))
+  nx2 = min(W, int(np.ceil(x2 + dx)))
+  ny2 = min(H, int(np.ceil(y2 + dy)))
   return nx1, ny1, nx2, ny2
 
 class FoodDetectionModel:
@@ -58,7 +56,7 @@ class FoodDetectionModel:
     else:
       self.model = YOLO(f"{self.model_name}.pt")
 
-    if self.device is not None:
+    if self.model is not None and self.device is not None:
       try:
         self.model.to(self.device)
       except Exception as e:
@@ -67,9 +65,10 @@ class FoodDetectionModel:
     
     try:
       # get list class name from weight
-      names = self.model.names
-      if isinstance(names, dict) and names:
-        self.class_names = {int(k): v for k,v in names.items()}
+      if self.model is not None:
+        names = self.model.names
+        if isinstance(names, dict) and names:
+          self.class_names = {int(k): v for k,v in names.items()}
     except Exception:
       pass
 
@@ -113,12 +112,12 @@ class FoodDetectionModel:
       "device": self.device,
 
       # augmentation hypers
-      "hsv_h": aug.get("hsv_h", 0.015),
-      "hsv_s": aug.get("hsv_s", 0.7),
-      "hsv_v": aug.get("hsv_v", 0.4),
+      "hsv_h": aug.get("hsv_h", 0.007),
+      "hsv_s": aug.get("hsv_s", 0.5),
+      "hsv_v": aug.get("hsv_v", 0.3),
       "degrees": aug.get("degrees", 15.0),
       "fliplr": aug.get("fliplr", 0.5),
-      "mosaic": aug.get("mosaic", 1.0),
+      "mosaic": aug.get("mosaic", 0.8),
 
       # optional advanced
       "mixup": aug.get("mixup", 0.0),
@@ -139,6 +138,7 @@ class FoodDetectionModel:
 
     train_kwargs = self._build_train_kwags()
 
+    assert self.model is not None
     results = self.model.train(
       data=str(self.datayaml_path),
       **train_kwargs,
@@ -230,6 +230,7 @@ class FoodDetectionModel:
         return Image.fromarray(image)
       if image.shape[2] == 4:
         return Image.fromarray(image[..., :3])
+    raise TypeError("Unsupported image type for _to_pil")
       
   def draw(self, image, detections, color=(0,255,0), width=2, font_path=None, font_size=14):
     pil = self._to_pil(image=image).copy()
@@ -251,10 +252,11 @@ class FoodDetectionModel:
       for w in range(width):
         draw.rectangle([x1-w, y1-w, x2+w, y2+w], outline=color)
 
-      # draw white text and black bạckground
-      tw, th = draw.textsize(label, font=font)
-      draw.rectangle([x1, y1-th-2, x1+tw+4, y1], fill=(0,0,0))
-      draw.text((x1+2,y1-th-2), label, fill=(255,255,255), font=font)
+      # draw white text and black background
+      left, top, right, bottom = draw.textbbox((x1, y1), label, font=font)
+      tw, th = right - left, bottom - top
+      draw.rectangle([x1, y1 - th - 2, x1 + tw + 4, y1], fill=(0, 0, 0))
+      draw.text((x1 + 2, y1 - th - 2), label, fill=(255, 255, 255), font=font)
 
     return pil
   
@@ -297,10 +299,11 @@ if __name__ == "__main__":
   best_path = det.train_with_config()
 
   test_img = ""
-  dets = det.predict(test_img)
+  dets = det.predict(test_img, conf=None, iou=None)
 
   drawn = det.draw(test_img, dets)
   Path("outputs").mkdir(exist_ok=True, parents=True)
   drawn.save("outputs/test_with_boxes.jpg", quality=95)
 
   crop_paths = det.crop_images(test_img, dets, out_dir="outputs/crops")
+

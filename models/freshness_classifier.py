@@ -6,7 +6,7 @@ class FreshnessClassifier(nn.Module):
     def __init__(self, backbone="efficientnet_b2", num_classes=3, pretrained=True, dropout=0.3, global_pool="avg"):
         super(FreshnessClassifier, self).__init__()
         self.backbone = timm.create_model(backbone, pretrained=pretrained, num_classes=0, global_pool=global_pool)
-        feat = self.backbone.num_features
+        feat: int = int(getattr(self.backbone, "num_features", 0))
         
         self.head = nn.Sequential(
             nn.Dropout(dropout),

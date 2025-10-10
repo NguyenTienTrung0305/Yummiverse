@@ -26,11 +26,11 @@ training:
 
     label_smoothing: 0.1
     ema_decay: 0.999
-    amp: true   # Automatic Mixed Precision
+    amp: true # Automatic Mixed Precision
 
-    mix_stop_ratio: 0.7 
+    mix_stop_ratio: 0.7
     use_mix: true
-    mix_type: "cutmix"  
+    mix_type: "cutmix"
     mix_prob: 0.35
     mix_alpha: 0.2
 
@@ -45,7 +45,6 @@ paths:
   freshness_data: "datasets/freshness/"
   classifier_out_dir: runs/classifier
   detection_out_dir: runs/detection
-
 
 # Optimizer
 optimizer:
@@ -62,20 +61,19 @@ optimizer:
     div_factor: 25.0
     weight_decay: 0.0001
 
-  
 # Augmentation
 augmentation:
   detection:
-    hsv_h: 0.015
-    hsv_s: 0.7
-    hsv_v: 0.4
+    hsv_h: 0.007
+    hsv_s: 0.5
+    hsv_v: 0.3
     degrees: 15.0
     fliplr: 0.5
 
     # turn on if have few data and in final epoch training
     mixup: 0.1
     copy_paste: 0.1
-    mosaic: 1.0
+    mosaic: 0.8
 
   freshness:
     rotation: 15
@@ -89,7 +87,6 @@ augmentation:
     noise_prob: 0.10
     shadow_prob: 0.10
     coarse_dropout_prob: 0.05
-
 
 # Inference
 inference:

@@ -20,8 +20,8 @@ class ClassifierTrainer:
 
 
   def _build_loaders_classifier(self, base, tr_idx, val_idx):
-    tr_transforms = build_transforms('train', self.cfg['training']['freshness'].get('img_size', 224))
-    val_transforms = build_transforms('val', self.cfg['training']['freshness'].get('img_size', 224))
+    tr_transforms = build_cls_transforms('train', self.cfg['training']['freshness'].get('img_size', 224))
+    val_transforms = build_cls_transforms('val', self.cfg['training']['freshness'].get('img_size', 224))
     tr_ds = subset_by_indices(base, tr_idx, tr_transforms)
     val_ds = subset_by_indices(base, val_idx, val_transforms)
 
@@ -69,7 +69,7 @@ class ClassifierTrainer:
   def train_cv(self, data_root):
     data_root = Path(data_root)
     base_dataset = AlbImageFolder(str(data_root), transform=None)
-    n_cls = len(base_dataset.classes)
+    n_cls = len(base_dataset.classes or [])
     labels = base_dataset.targets
     skf = StratifiedKFold(n_splits=self.cfg['training'].get('folds', 5), shuffle=True, random_state=42)
     out_dir = Path(self.cfg.get('paths', {}).get('classifier_out_dir', 'runs/classifier'))
@@ -83,9 +83,9 @@ class ClassifierTrainer:
 
       tr_loader, val_loader = self._build_loaders_classifier(base_dataset, tr_idx, val_idx)
       model = FreshnessClassifier(
-        self.cfg['freshness_model'].get('name'), 
-        n_cls, 
-        self.cfg['training']['freshness'].get('dropout', 0.3), 
+        backbone=self.cfg['freshness_model'].get('name'),
+        num_classes=n_cls,
+        dropout=self.cfg['training']['freshness'].get('dropout', 0.3),
         pretrained=True
       ).to(self.device)
 
@@ -144,6 +144,7 @@ class ClassifierTrainer:
           targets = targets.to(self.device)  # (batch_size)
 
           # Mixup + Cutmix
+          y_a, y_b, lam = None, None, None
           use_mix = (epoch <= int(self.cfg['training']['freshness'].get('epochs', 100) 
                                   * self.cfg['training']['freshness'].get('mix_stop_ratio', 0.7))) and self.cfg['training']['freshness'].get('use_mix', True)
           if use_mix:

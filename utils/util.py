@@ -133,54 +133,108 @@ def mix_criterion(logits, y_a, y_b, lam, reduction='mean'):
 #  Albumentations (giữ màu/texture)
 # =================================================================================================
 class GrayWorldWB(A.ImageOnlyTransform):
-    def __init__(self, p=0.35):
-        super().__init__(p=p)
+    def __init__(self, alpha_min=0.1, alpha_max=0.3, p=0.3):
+        super().__init__(p)
+        self.alpha_min = alpha_min
+        self.alpha_max = alpha_max
     
-    def apply(self, img, **params):
+    def apply(self, img, alpha=0.2, **params):
         img = img.astype(np.float32)
         r, g, b = img[:, :, 0].mean()+1e-6, img[:, :, 1].mean()+1e-6, img[:, :, 2].mean()+1e-6
         gray = (b + g + r)/3.0
-        img[:, : , 0] *= gray / r
-        img[:, :, 1] *= gray / g
-        img[:, :, 2] *= gray / b
-        return np.clip(img, 0, 255).astype(np.uint8)
+        
+        corr = img.copy()
+        corr[..., 0] *= gray / r
+        corr[..., 1] *= gray / g
+        corr[..., 2] *= gray / b
+        
+        # alpha blend
+        out = (1 - alpha) * img + alpha * corr
+        return np.clip(out, 0, 255).astype(np.uint8)
+    
+    def get_params(self):
+        return {"alpha": float(np.random.uniform(self.alpha_min, self.alpha_max))}
     
 
 class SaturationClamp(A.ImageOnlyTransform):
-    def __init__(self, max_sat=1.35, p=0.5):
-        super().__init__(p=p)
-        self.max_sat = max_sat
+    def __init__(self, sat_min=0.85, sat_max=1.25, p=0.5):
+        super().__init__(p)
+        self.sat_min = sat_min
+        self.sat_max = sat_max
     
-    def apply(self, img, **params):
+    def apply(self, img, s=1.0, **params):
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(np.float32)
-        hsv[..., 1] = np.clip(hsv[..., 1] * self.max_sat, 0, 255)
+        hsv[..., 1] = np.clip(hsv[..., 1] * s, 0, 255)
         hsv = hsv.astype(np.uint8)
         return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    
+    def get_params(self):
+        return {"s": float(np.random.uniform(self.sat_min, self.sat_max))}
 
 
-def build_transforms(phase, img_size=224):
+def build_det_transforms(phase, img_size=224):
     if phase == 'train':
         return A.Compose([
-            A.SmallestMaxSize(max_size=int(img_size*1.15), p=1.0),
-            A.RandomCrop(img_size, img_size, p=1.0),
-            GrayWorldWB(p=0.35),
-            SaturationClamp(max_sat=1.35, p=0.5),
+            # remaining aspect ratio + padding + random crop => avoid distortion
+            A.LongestMaxSize(max_size=img_size, p=1.0),
+            A.PadIfNeeded(min_height=img_size, min_width=img_size,
+                          border_mode=cv2.BORDER_CONSTANT, fill=0, p=1.0),
+            
             A.HorizontalFlip(p=0.5),
-            A.VerticalFlip(p=0.5),
-            A.ShiftScaleRotate(shift_limit=0.04, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, fill=0, p=0.35),
-            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.6),
-            A.HueSaturationValue(hue_shift_limit=5, sat_shift_limit=10, val_shift_limit=10, p=0.3),
+            A.ShiftScaleRotate(shift_limit=0.04, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_REFLECT101, p=0.35),
+            
+            GrayWorldWB(alpha_min=0.1, alpha_max=0.25, p=0.25),
+            SaturationClamp(sat_min=0.90, sat_max=1.15, p=0.4),
+            
+
+            A.RandomBrightnessContrast(brightness_limit=0.15, contrast_limit=0.15, p=0.4),
+            A.HueSaturationValue(hue_shift_limit=5, sat_shift_limit=10, val_shift_limit=10, p=0.2),
             A.RGBShift(r_shift_limit=8, g_shift_limit=8, b_shift_limit=8, p=0.2),
-            A.OneOf([A.GaussianBlur(blur_limit=3, p=1.0), A.MotionBlur(blur_limit=3, p=1.0)], p=0.12),
+            A.OneOf([A.GaussianBlur(blur_limit=(3,5), p=1.0), A.MotionBlur(blur_limit=5, p=1.0)], p=0.12),
             A.GaussNoise(std_range=(5.0, 30.0), p=0.2),
-            A.RandomShadow(shadow_roi=(0,0.6,1,1), num_shadows_limit=(1,1), shadow_dimension=4, p=0.10),
-            A.CoarseDropout(num_holes_range=(1,1), hole_height_range=(img_size // 24, img_size // 12), 
-                             hole_width_range=(img_size // 24, img_size // 12), fill=0, p=0.1),
             A.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225)), ToTensorV2(),
         ])
     else:
-        return A.Compose([ A.Resize(img_size, img_size),
-            A.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225)), ToTensorV2(),])
+        return A.Compose([
+                A.LongestMaxSize(max_size=img_size, p=1.0),
+                A.PadIfNeeded(min_height=img_size, min_width=img_size,
+                          border_mode=cv2.BORDER_CONSTANT, fill=0, p=1.0),
+                A.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225)), ToTensorV2(),
+            ])
+
+def build_cls_transforms(phase, img_size=224):
+    if phase == 'train':
+        return A.Compose([
+            A.RandomResizedCrop(size=(img_size, img_size),scale=(0.7, 1.0),ratio=(0.85, 1.2)),
+            A.HorizontalFlip(p=0.5),
+            A.ShiftScaleRotate(0.03, 0.08, 8, border_mode=cv2.BORDER_REFLECT_101, p=0.35),
+            
+            A.OneOf([
+                A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+                A.RandomGamma((80,120)),
+                A.CLAHE((1.0,2.0), tile_grid_size=(8,8)),
+            ], p=0.6),
+            
+
+            A.HueSaturationValue(hue_shift_limit=2, sat_shift_limit=6, val_shift_limit=6, p=0.2),
+            A.RandomBrightnessContrast(0.18, 0.18, p=0.5),
+            A.OneOf([A.MotionBlur(5), A.GaussianBlur((3,5))], p=0.15),
+            A.OneOf([A.GaussNoise((5.0,25.0)), A.ISONoise((0.01,0.03),(0.1,0.3))], p=0.2),
+            A.OneOf([
+                A.Downscale(scale_range=(0.6, 0.9),  
+                            interpolation_pair={"downscale": cv2.INTER_AREA, "upscale": cv2.INTER_CUBIC}
+                            ), 
+                A.ImageCompression(quality_range=(65, 95))], p=0.2),
+
+            A.CoarseDropout(num_holes_range=(1,1), hole_height_range=(img_size // 28, img_size // 14), 
+                             hole_width_range=(img_size // 28, img_size // 14), fill=0, p=0.1),
+            A.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225)), ToTensorV2(),
+        ])
+    else:
+        return A.Compose([ 
+                A.Resize(img_size, img_size),
+                A.Normalize((0.485,0.456,0.406),(0.229,0.224,0.225)), ToTensorV2()
+            ])
 
 
 
