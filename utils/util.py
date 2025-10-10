@@ -52,9 +52,9 @@ class EMA:
                 self.shadow[name] = param.data.clone()
     
     # Sau các bước cập nhật trọng số => param.data thay đổi => shadow cũng thay đổi để làm mượt
-    # Ví dụ trong quá trình train (param=0.6, shadow=0.5) => param.data từ 0.6 => 0.59 => 0.595. Sau 1 vài bước train, update được gọi
-        # shadow = 0.5 * decay + (1- decay)*0.6
-        # tiếp tục quá trình train với param=0.595 chứ không sử dụng giá trị của shadow để train
+    # Ví dụ trong quá trình train (param=0.6, shadow=0.5) => param.data = 0.6. Update được gọi
+        # shadow = 0.5 * decay + (1- decay)*0.6 = 0.52
+        # tiếp tục quá trình train với param=0.6 chứ không sử dụng giá trị của shadow để train => param.data=0.8 => shadow=0.52*decay+(1-decay)*0.8
     @torch.no_grad()
     def update(self):
         for name, param in self.model.named_parameters():
@@ -76,6 +76,17 @@ class EMA:
             if hasattr(self, 'backup') and name in self.backup:
                 param.data = self.backup[name].clone()
         self.backup = {}
+
+
+    def state_dict(self):
+        return {
+            'shadow': self.shadow,
+            'decay': self.decay
+        }
+    
+    def load_state_dict(self, state_dict):
+        self.shadow = state_dict['shadow']
+        self.decay = state_dict['decay']
         
 
 def mixup_cutmix(images, targets, alpha=0.2, cutmix_prob=0.3):
@@ -83,7 +94,9 @@ def mixup_cutmix(images, targets, alpha=0.2, cutmix_prob=0.3):
     + Return  (images, y_a, y_b, lam, is_cutmix)
     + mixup: pick two images randomly, mix them with ratio lam ~ Beta(alpha, alpha)
     + cutmix: pick two images randomly, cut a patch from one image and paste it to another image with ratio lam ~ Beta(alpha, alpha)
-    + targets: one-hot encoded labels
+
+    + images: (batch_size, 3, H, W)
+    + targets: one-hot encoded labels (batch_size,)
     + using beta distribution to sample lam 
       => make sure lam is in (0, 1) => make new images remain more details in old images (with lam close to 0 or 1)
       => x = lam*x1 + (1-lam)*x2
@@ -93,7 +106,7 @@ def mixup_cutmix(images, targets, alpha=0.2, cutmix_prob=0.3):
         # CutMix
         lam = np.random.beta(alpha, alpha) if alpha > 0 else 1.0
         batch_size, _, H, W = images.size()
-        index = torch.randperm(batch_size ,device=device)
+        index = torch.randperm(batch_size, device=device)   # generate random permutations from 1 to batchsize
         cx, cy = np.random.randint(W), np.random.randint(H) # center of the box
         w = int(W * math.sqrt(1 - lam))
         h = int(H * math.sqrt(1 - lam))
@@ -191,7 +204,7 @@ class AlbImageFolder(Dataset):
                 raise ValueError("Must provide either root or samples")
             imagefolder = ImageFolder(root)
             self.samples = imagefolder.samples
-            self.classes = imagefolder.classes
+            self.classes = imagefolder.classes       # List of unique class names
 
         self.transform = transform
         self.targets = [s[1] for s in self.samples]  # Extract labels
@@ -215,3 +228,5 @@ def subset_by_indices(base_ds, indices, transform):
         classes=base_ds.classes,
         transform=transform
     )
+
+
