@@ -37,8 +37,29 @@ class ClassifierTrainer:
       shuffle=False, 
       num_workers=self.cfg['training'].get('workers', 4)
     )
-
     return tr_loader, val_loader
+  
+
+  def _eval_metrics(self, model, loader, report=False, class_names=None):
+    model.eval()
+    all_predict, all_y = [], []
+    for img, y in loader:
+      img = img.to(self.device)
+      logits = model(img)
+      predict = logits.argmax(1).cpu().numpy()
+      all_predict.extend(predict)
+      all_y.extend(y.numpy())
+
+    all_predict, all_y = np.array(all_predict), np.array(all_y)
+    acc = (all_predict == all_y).mean()
+    f1score = f1_score(all_y, all_predict, average='macro')
+    if report:
+      print(classification_report(all_y, all_predict, target_names=class_names, digits=4))
+      print("Confusion matrix:\n", confusion_matrix(all_y, all_predict))
+    return acc, f1score
+
+
+
 
   """
     base_dataset: + contain all path to images and name classes (ex: ('data/cat/cat1.jpg', 0))
@@ -170,6 +191,10 @@ class ClassifierTrainer:
           pbar.set_postfix(loss=f"{loss.item():.4f}", acc=f"{100.0*tr_correct/max(1,tr_total):.2f}%")
 
 
+        # Validation (EMA weights)
+        ema.apply_to(model=model)
+        val_acc, val_f1 = self._eval_metrics(model, val_loader, report=True, class_names=base_dataset.classes)
+        ema.restore(model=model)
 
 
 

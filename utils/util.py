@@ -76,6 +76,17 @@ class EMA:
             if hasattr(self, 'backup') and name in self.backup:
                 param.data = self.backup[name].clone()
         self.backup = {}
+
+
+    def state_dict(self):
+        return {
+            'shadow': self.shadow,
+            'decay': self.decay
+        }
+    
+    def load_state_dict(self, state_dict):
+        self.shadow = state_dict['shadow']
+        self.decay = state_dict['decay']
         
 
 def mixup_cutmix(images, targets, alpha=0.2, cutmix_prob=0.3):
@@ -193,7 +204,7 @@ class AlbImageFolder(Dataset):
                 raise ValueError("Must provide either root or samples")
             imagefolder = ImageFolder(root)
             self.samples = imagefolder.samples
-            self.classes = imagefolder.classes
+            self.classes = imagefolder.classes       # List of unique class names
 
         self.transform = transform
         self.targets = [s[1] for s in self.samples]  # Extract labels
