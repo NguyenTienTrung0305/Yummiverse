@@ -1,0 +1,161 @@
+// ---------- Generators & Datasource ----------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ---------- Models ----------
+model USDAFood {
+  /// PRIMARY KEY: fdc_id (BIGINT)
+  fdc_id      BigInt   @id
+  description String?  @db.Text
+  data_type   String?  @db.VarChar(100)
+  brand_name  String?  @db.Text
+  category    String?  @db.Text
+
+  raw_data    Json     @db.JsonB
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  nutrition   NutritionCache?
+  detected    DetectedIngredient[]
+
+  @@map("usda_foods")
+}
+
+
+model NutritionCache {
+  /// usda_fdc_id vừa là PK, vừa là FK → 1-1 với USDAFood
+  usda_fdc_id BigInt   @id
+
+  calories       Decimal? @db.Decimal(10, 2)
+  protein        Decimal? @db.Decimal(10, 2)
+  carbs          Decimal? @db.Decimal(10, 2)
+  fat            Decimal? @db.Decimal(10, 2)
+  fiber          Decimal? @db.Decimal(10, 2)
+  sugars         Decimal? @db.Decimal(10, 2)
+  sodium         Decimal? @db.Decimal(10, 2)
+  cholesterol    Decimal? @db.Decimal(10, 2)
+  saturated_fat  Decimal? @db.Decimal(10, 2)
+  vitamin_a      Decimal? @db.Decimal(10, 2)
+  vitamin_c      Decimal? @db.Decimal(10, 2)
+  vitamin_d      Decimal? @db.Decimal(10, 2)
+  calcium        Decimal? @db.Decimal(10, 2)
+  iron           Decimal? @db.Decimal(10, 2)
+  potassium      Decimal? @db.Decimal(10, 2)
+
+  /// default CURRENT_TIMESTAMP + INTERVAL '24 hours'
+  expiry_timestamp DateTime? @default(dbgenerated("CURRENT_TIMESTAMP + interval '24 hours'"))
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relation to USDAFood
+  food USDAFood @relation(fields: [usda_fdc_id], references: [fdc_id], onDelete: Cascade)
+
+  @@map("nutrition_cache")
+}
+
+
+
+model DetectedIngredient {
+  id              Int      @id @default(autoincrement())
+  session_id      String   @db.VarChar(100)
+  name_vi         String   @db.Text
+  name_en         String?  @db.Text
+  quantity        Decimal? @db.Decimal(10, 2)
+  freshness_level String?  @default("fresh") @db.VarChar(50)
+  freshness_score Decimal? @default(100) @db.Decimal(5, 2)
+  is_usable       Boolean  @default(true)
+  usda_fdc_id     BigInt?
+  image_url       String?  @db.Text
+  detected_at     DateTime @default(now())
+
+  // Relations
+  food USDAFood? @relation(fields: [usda_fdc_id], references: [fdc_id])
+  recipeItems RecipeIngredient[]
+
+
+  @@index([session_id], map: "idx_detected_session")
+
+  @@map("detected_ingredients")
+}
+
+
+
+
+model UserRequest {
+  id                   Int      @id @default(autoincrement())
+  session_id           String   @db.VarChar(100)
+  user_prompt          String?  @db.Text
+  cuisine_preference   String?  @db.VarChar(100)
+  dietary_restrictions String[] @db.Text
+  allergies            String[] @db.Text
+  created_at           DateTime @default(now())
+
+  // Relations
+  recipes GeneratedRecipe[]
+
+  @@index([session_id], map: "idx_user_requests_session")
+
+  @@map("user_requests")
+}
+
+
+
+model GeneratedRecipe {
+  id             Int      @id @default(autoincrement())
+  session_id     String   @db.VarChar(100)
+  user_request_id Int?
+
+  recipe_name    String   @db.VarChar(255)
+  cuisine_type   String?  @db.VarChar(100)
+  cooking_method String?  @db.VarChar(100)
+  difficulty     String?  @db.VarChar(50)
+  cooking_time   Int?
+  servings       Int?
+  instructions   String?  @db.Text
+
+  total_calories Decimal? @db.Decimal(10, 2)
+  total_protein  Decimal? @db.Decimal(10, 2)
+  total_carbs    Decimal? @db.Decimal(10, 2)
+  total_fat      Decimal? @db.Decimal(10, 2)
+
+  llm_response   Json?    @db.JsonB
+  created_at     DateTime @default(now())
+
+  // Relations
+  userRequest UserRequest? @relation(fields: [user_request_id], references: [id], onDelete: Cascade)
+  ingredients RecipeIngredient[]
+
+  @@index([session_id], map: "idx_recipes_session")
+
+  @@map("generated_recipes")
+}
+
+
+
+model RecipeIngredient {
+  id                     Int      @id @default(autoincrement())
+  recipe_id              Int
+  detected_ingredient_id Int?
+  quantity_used          Decimal? @db.Decimal(10, 2)
+  unit                   String?  @db.VarChar(50)
+  notes                  String?  @db.Text
+
+  // Relations
+  recipe   GeneratedRecipe   @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+  detected DetectedIngredient? @relation(fields: [detected_ingredient_id], references: [id])
+
+
+  @@index([recipe_id])
+
+  @@map("recipe_ingredients")
+}
