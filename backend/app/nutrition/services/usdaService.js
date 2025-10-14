@@ -28,6 +28,7 @@ class USDAService {
 
   async getFoodDetails(fdcId) {
     try {
+      // get from cache first
       const cached = await this.getCachedFood(fdcId);
       if (cached) {
         return cached;
@@ -49,43 +50,40 @@ class USDAService {
     }
   }
 
-
   async cachedFoodData(foodData) {
     try {
       await prisma.$transaction(async (tx) => {
-
         // Upsert = Insert or Update if exists
-        const usdaFood = await tx.usdaFood.upsert({
+        const usdaFood = await tx.USDAFood.upsert({
           where: {
-            fdcId: foodData.fdcId,
+            fdc_id: foodData.fdcId,
           },
 
           update: {
             description: foodData.description,
-            dataType: foodData.dataType,
-            brandName: foodData.brandName || null,
+            data_type: foodData.dataType,
+            brand_name: foodData.brandName || null,
             category: foodData.foodCategory || null,
-            rawData: foodData,
-            updatedAt: new Date()
+            raw_data: foodData,
+            updated_at: new Date(),
           },
 
           create: {
-            fdcId: foodData.fdcId,
+            fdc_id: foodData.fdcId,
             description: foodData.description,
-            dataType: foodData.dataType,
-            brandName: foodData.brandName || null,
+            data_type: foodData.dataType,
+            brand_name: foodData.brandName || null,
             category: foodData.foodCategory || null,
-            rawData: foodData
-          }
-        })
+            raw_data: foodData,
+          },
+        });
 
         const nutrition = this.parseNutrients(foodData.foodNutrients);
 
-
-        await tx.nutritionCache.upsert({
+        await tx.NutritionCache.upsert({
           where: {
-            usdaFdcId: usdaFood.fdcId,
-          }
+            usda_fdc_id: usdaFood.fdc_id,
+          },
 
           update: {
             calories: nutrition.calories,
@@ -97,16 +95,17 @@ class USDAService {
             sodium: nutrition.sodium,
             cholesterol: nutrition.cholesterol,
             saturatedFat: nutrition.saturated_fat,
-            vitaminA: nutrition.vitamin_a,
-            vitaminC: nutrition.vitamin_c,
-            vitaminD: nutrition.vitamin_d,
+            vitamin_a: nutrition.vitamin_a,
+            vitamin_c: nutrition.vitamin_c,
+            vitamin_d: nutrition.vitamin_d,
             calcium: nutrition.calcium,
             iron: nutrition.iron,
-            potassium: nutrition.potassium
+            potassium: nutrition.potassium,
+            updated_at: new Date(),
           },
 
           create: {
-            usdaFdcId: foodData.fdcId,
+            usda_fdc_id: foodData.fdcId,
             calories: nutrition.calories,
             protein: nutrition.protein,
             carbs: nutrition.carbs,
@@ -116,31 +115,29 @@ class USDAService {
             sodium: nutrition.sodium,
             cholesterol: nutrition.cholesterol,
             saturatedFat: nutrition.saturated_fat,
-            vitaminA: nutrition.vitamin_a,
-            vitaminC: nutrition.vitamin_c,
-            vitaminD: nutrition.vitamin_d,
+            vitamin_a: nutrition.vitamin_a,
+            vitamin_c: nutrition.vitamin_c,
+            vitamin_d: nutrition.vitamin_d,
             calcium: nutrition.calcium,
             iron: nutrition.iron,
-            potassium: nutrition.potassium
-          }
-        })
-
+            potassium: nutrition.potassium,
+          },
+        });
       });
-
     } catch (error) {
-      console.error('Cache Error:', error.message);
+      console.error("Cache Error:", error.message);
       throw error;
     }
   }
 
   async getCachedFood(fdcId) {
     try {
-      const food = await prisma.usdaFood.findUnique({
+      const food = await prisma.USDAFood.findUnique({
         where: {
-          fdcId: fdcId,
+          fdc_id: fdcId,
         },
         include: {
-          nutritionCache: true,
+          nutrition: true,
         },
       });
       return food;
@@ -150,32 +147,31 @@ class USDAService {
     }
   }
 
-
   parseNutrients(foodNutrients) {
     const nutrientMap = {
-      'Energy': 'calories',
-      'Protein': 'protein',
-      'Carbohydrate, by difference': 'carbs',
-      'Total lipid (fat)': 'fat',
-      'Fiber, total dietary': 'fiber',
-      'Sugars, total including NLEA': 'sugars',
-      'Sodium, Na': 'sodium',
-      'Cholesterol': 'cholesterol',
-      'Fatty acids, total saturated': 'saturated_fat',
-      'Vitamin A, RAE': 'vitamin_a',
-      'Vitamin C, total ascorbic acid': 'vitamin_c',
-      'Vitamin D (D2 + D3)': 'vitamin_d',
-      'Calcium, Ca': 'calcium',
-      'Iron, Fe': 'iron',
-      'Potassium, K': 'potassium'
-    }
+      Energy: "calories",
+      Protein: "protein",
+      "Carbohydrate, by difference": "carbs",
+      "Total lipid (fat)": "fat",
+      "Fiber, total dietary": "fiber",
+      "Sugars, total including NLEA": "sugars",
+      "Sodium, Na": "sodium",
+      Cholesterol: "cholesterol",
+      "Fatty acids, total saturated": "saturated_fat",
+      "Vitamin A, RAE": "vitamin_a",
+      "Vitamin C, total ascorbic acid": "vitamin_c",
+      "Vitamin D (D2 + D3)": "vitamin_d",
+      "Calcium, Ca": "calcium",
+      "Iron, Fe": "iron",
+      "Potassium, K": "potassium",
+    };
 
     const result = {};
-    
-    foodNutrients.forEach(nutrient => {
+
+    foodNutrients.forEach((nutrient) => {
       const name = nutrient.nutrient?.name;
       const key = nutrientMap[name];
-      
+
       if (key) {
         let value = nutrient.amount || 0;
         result[key] = parseFloat(value.toFixed(2));
@@ -185,11 +181,64 @@ class USDAService {
     return result;
   }
 
+  async findAndCachedIngredient(ingredientName) {
+    try {
+      const searchResults = await this.searchFoods(ingredientName, 5);
+      if (searchResults.length === 0) {
+        throw new Error("No matching food found in USDA");
+      }
+
+      const topResults = searchResults[0];
+      const detailFood = await this.getFoodDetails(topResults.fdcId);
+
+      return {
+        fdcId: topResults.fdcId,
+        description: topResults.description,
+        nutrition: await this.getCachedFood(topResults.fdcId),
+      };
+    } catch (error) {
+      console.error(
+        `Error finding ingredient "${ingredientName}":`,
+        error.message
+      );
+      throw error;
+    }
+  }
+
+  async getNutritionForIngredients(ingredients) {
+    const results = [];
+
+    for (const ingredient of ingredients) {
+      try {
+        const data = await this.findAndCachedIngredient(ingredient);
+        results.push({
+          name: ingredient.name_vi,
+          nameEn: ingredient.name_en,
+          quantity: ingredient.quantity,
+          freshness: ingredient.freshness_level,
+          usable: ingredient.is_usable,
+          fdcId: data.fdcId,
+          nutrition: data.nutrition,
+        });
+      } catch (error) {
+        console.error(
+          `Error processing ingredient "${ingredient.name_vi}":`,
+          error.message
+        );
+      }
+    }
+
+    return results;
+  }
+
+  async disconnect() {
+    await prisma.$disconnect();
+    return results;
+  }
 
   async disconnect() {
     await prisma.$disconnect();
   }
 }
 
-
-module.exports = new USDAService();
+export default new USDAService();
