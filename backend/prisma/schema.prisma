@@ -64,19 +64,19 @@ model NutritionCache {
 }
 
 
-
+// session_id: phiên làm việc của AI
 model DetectedIngredient {
-  id              Int      @id @default(autoincrement())
-  session_id      String   @db.VarChar(100)
-  name_vi         String   @db.Text
-  name_en         String?  @db.Text
-  quantity        Decimal? @db.Decimal(10, 2)
-  freshness_level String?  @default("fresh") @db.VarChar(50)
-  freshness_score Decimal? @default(100) @db.Decimal(5, 2)
-  is_usable       Boolean  @default(true)
+  id              Int       @id @default(autoincrement())
+  session_id      String    @db.VarChar(100)
+  name_vi         String    @db.Text
+  name_en         String    @db.Text
+  quantity        Decimal?  @db.Decimal(10, 2)
+  freshness_level String?   @default("fresh") @db.VarChar(50)
+  freshness_score Decimal?  @default(100) @db.Decimal(5, 2)
+  is_usable       Boolean   @default(true)
   usda_fdc_id     BigInt?
-  image_url       String?  @db.Text
-  detected_at     DateTime @default(now())
+  image_url       String?   @db.Text
+  detected_at     DateTime  @default(now())
 
   // Relations
   food USDAFood? @relation(fields: [usda_fdc_id], references: [fdc_id])
@@ -92,13 +92,13 @@ model DetectedIngredient {
 
 
 model UserRequest {
-  id                   Int      @id @default(autoincrement())
-  session_id           String   @db.VarChar(100)
-  user_prompt          String?  @db.Text
-  cuisine_preference   String?  @db.VarChar(100)
-  dietary_restrictions String[] @db.Text
-  allergies            String[] @db.Text
-  created_at           DateTime @default(now())
+  id                   Int       @id @default(autoincrement())
+  session_id           String    @db.VarChar(100)
+  user_prompt          String?   @db.Text
+  cuisine_preference   String?   @db.VarChar(100)
+  dietary_restrictions String[]? 
+  allergies            String[]? 
+  created_at           DateTime  @default(now())
 
   // Relations
   recipes GeneratedRecipe[]
