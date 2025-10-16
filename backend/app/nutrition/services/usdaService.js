@@ -54,7 +54,7 @@ class USDAService {
     try {
       await prisma.$transaction(async (tx) => {
         // Upsert = Insert or Update if exists
-        const usdaFood = await tx.USDAFood.upsert({
+        const usdaFood = await tx.usdaFood.upsert({
           where: {
             fdc_id: foodData.fdcId,
           },
@@ -80,7 +80,7 @@ class USDAService {
 
         const nutrition = this.parseNutrients(foodData.foodNutrients);
 
-        await tx.NutritionCache.upsert({
+        await tx.nutritionCache.upsert({
           where: {
             usda_fdc_id: usdaFood.fdc_id,
           },
@@ -132,7 +132,7 @@ class USDAService {
 
   async getCachedFood(fdcId) {
     try {
-      const food = await prisma.USDAFood.findUnique({
+      const food = await prisma.usdaFood.findUnique({
         where: {
           fdc_id: fdcId,
         },

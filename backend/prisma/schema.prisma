@@ -10,7 +10,7 @@ datasource db {
 
 
 // ---------- Models ----------
-model USDAFood {
+model UsdaFood {
   /// PRIMARY KEY: fdc_id (BIGINT)
   fdc_id      BigInt   @id
   description String?  @db.Text
