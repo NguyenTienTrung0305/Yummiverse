@@ -130,7 +130,7 @@ def mix_criterion(logits, y_a, y_b, lam, reduction='mean'):
 
 
 # =================================================================================================
-#  Albumentations (giữ màu/texture)
+#  Albumentations (giữ màu/texture) for training
 # =================================================================================================
 class GrayWorldWB(A.ImageOnlyTransform):
     def __init__(self, alpha_min=0.1, alpha_max=0.3, p=0.3):
@@ -237,6 +237,28 @@ def build_cls_transforms(phase, img_size=224):
             ])
 
 
+# =================================================================================================
+#  preprocess image for inferences
+# =================================================================================================
+def preprocess_image_segment(img: np.ndarray):
+    """Apply mild denoise + contrast normalization for real camera images"""
+    if img.dtype != np.uint8:
+        img = (255 * np.clip(img,0,1)).astype(np.uint8)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) if img.shape[2] == 3 else img
+    img = cv2.GaussianBlur(img, (3,3), 0)
+    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+    l, a, b = cv2.split(lab)
+    l = cv2.equalizeHist(l)
+    lab = cv2.merge((l, a, b))
+    return cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+
+def morphology_clean(mask: np.ndarray):
+    """Clean mask artifacts (small holes, noise)"""
+    mask = mask.astype(np.uint8)
+    kernel = np.ones((3,3), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    return mask.astype(bool)
 
 # =================================================================================================
 # Dataset wrapper

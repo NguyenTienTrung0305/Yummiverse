@@ -1,0 +1,27 @@
+apple:
+  density_factor: 1.2   # Hệ số mật độ 
+  base_weight: 180      # Trọng lượng trung bình
+  min_weight: 100
+  max_weight: 300
+  shape_factor: 0.9     # Hệ số hình dạng (càng tròn càng gần 1)
+
+banana:
+  density_factor: 0.8
+  base_weight: 120     
+  min_weight: 80
+  max_weight: 200
+  shape_factor: 0.6
+
+orange:
+  density_factor: 1.1
+  base_weight: 150     
+  min_weight: 80
+  max_weight: 300
+  shape_factor: 0.82
+
+broccoli:
+  density_factor: 0.5   # Rau ít đặc
+  base_weight: 150     
+  min_weight: 80
+  max_weight: 300
+  shape_factor: 0.68
