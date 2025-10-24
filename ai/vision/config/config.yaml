@@ -24,7 +24,33 @@ grabcut:
 
 
 volume_estimation:
-  
+  aruco_dict: DICT_4x4_50
+  reference_size_cm: 10.0
+
+  thickness_cm:
+    default: 2.0
+    thin: 0.3
+    flat: 0.5
+    medium: 2.0
+    thick: 4.0
+    super-thick: 6.0 
+    globular: 8.0
+
+  # Density assumptions (g/cm³)
+  # FAO/INFOODS Density Database version 2
+  density_g_per_cm:
+    default: 0.8
+    rice: 0.82
+    meat: 1.08
+    fish: 1.06
+    fruit: 0.87
+    vegetable: 0.42
+    bread: 0.25
+    milk: 1.03
+    noodle: 1.44
+
+
+
 
 
 training:
