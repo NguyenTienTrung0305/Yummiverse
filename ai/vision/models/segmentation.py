@@ -22,6 +22,17 @@ def expand_box(x1, y1, x2, y2, pad_ratio, shape):
     ny2 = min(H, int(np.ceil(y2 + dy)))
     return nx1, ny1, nx2, ny2
 
+def create_segmenter(cfg: Dict, use_sam2: bool = True):
+  if use_sam2:
+    try:
+      from sam2.build_sam import build_sam2
+      return SAM2Segmenter(cfg)
+    except ImportError:
+      logger.warning("SAM2 not available, using GrabCut fallback")
+      return GrabCutSegmenter(cfg)
+  else:
+    return GrabCutSegmenter(cfg)
+
 class SAM2Segmenter:
   """
     SAM2 (Segment Anything Model 2) for precise food segmentation.
@@ -247,3 +258,23 @@ class GrabCutSegmenter:
       'bbox': {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2}
     }
 
+  def batch_segment(
+    self,
+    image: Union[str, Path, np.ndarray, Image.Image],
+    detections: List[Dict]
+  ) -> List[Dict]:
+    results = []
+    for det in detections:
+      try:
+        seg_result = self.segment_bbox(
+          image=image,
+          bbox=det["bbox"]
+        )
+        results.append(**det, **seg_result)
+      except Exception as e:
+        results.append(**det, **{"mask": None, "score": 0.0, 'area': 0})
+
+    return results
+
+
+ 
