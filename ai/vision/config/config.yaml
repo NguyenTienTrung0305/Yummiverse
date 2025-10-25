@@ -41,10 +41,10 @@ training:
 
 # Data Paths
 paths:
-  detection_data: "data_detection.yaml"
-  freshness_data: "datasets/freshness/"
-  classifier_out_dir: runs/classifier
-  detection_out_dir: runs/detection
+  detection_data: "../data_detection.yaml"
+  freshness_data: "../datasets/freshness/"
+  classifier_out_dir: ../runs/classifier
+  detection_out_dir: ../runs/detection
 
 # Optimizer
 optimizer:
