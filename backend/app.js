@@ -2,18 +2,21 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import chalk from "chalk";
-import nutritionRoutes from "./app/nutrition/routes/nutrition.js";
+import nutritionRoutes from "./src/nutrition/routes/nutrition.js";
+
+// load config env
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 300;
+const PORT = process.env.PORT_BACKEND || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extend: "true", limit: "50mb" }));
+app.use(express.urlencoded({ extended: "true", limit: "50mb" }));
 
-app.use("api/nutrition", nutritionRoutes);
+app.use("/api/nutrition", nutritionRoutes);
 
-app.get("health", (req, res) => {
+app.get("/health", (req, res) => {
   res.json({
     status: "OK",
     message: "Nutrition API is running smoothly",

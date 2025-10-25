@@ -57,8 +57,8 @@ model NutritionCache {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  // Relation to USDAFood
-  food USDAFood @relation(fields: [usda_fdc_id], references: [fdc_id], onDelete: Cascade)
+  // Relation to UsdaFood
+  food UsdaFood @relation(fields: [usda_fdc_id], references: [fdc_id], onDelete: Cascade)
 
   @@map("nutrition_cache")
 }
@@ -79,7 +79,7 @@ model DetectedIngredient {
   detected_at     DateTime  @default(now())
 
   // Relations
-  food USDAFood? @relation(fields: [usda_fdc_id], references: [fdc_id])
+  food UsdaFood? @relation(fields: [usda_fdc_id], references: [fdc_id])
   recipeItems RecipeIngredient[]
 
 
@@ -96,8 +96,8 @@ model UserRequest {
   session_id           String    @db.VarChar(100)
   user_prompt          String?   @db.Text
   cuisine_preference   String?   @db.VarChar(100)
-  dietary_restrictions String[]? 
-  allergies            String[]? 
+  dietary_restrictions String[]  @default([]) 
+  allergies            String[]  @default([])  
   created_at           DateTime  @default(now())
 
   // Relations
