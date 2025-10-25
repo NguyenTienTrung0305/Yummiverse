@@ -1,2 +1,4 @@
-.venv/
+*/.venv/
 ai/datasets/*
+*/node_modules/
+.env

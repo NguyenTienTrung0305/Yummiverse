@@ -16,3 +16,4 @@ pyyaml>=6.0.0
 timm>=0.9.0 
 efficientnet-pytorch>=0.7.1
 tqdm>=4.65.0
+fastapi[all]>=0.115.0
