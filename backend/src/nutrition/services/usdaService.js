@@ -1,4 +1,5 @@
 import axios from "axios";
+import qs from "qs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -7,19 +8,34 @@ const prisma = new PrismaClient();
 const USDA_API_KEY = process.env.USDA_API_KEY;
 const USDA_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
 
+const client = axios.create({
+  baseURL: USDA_BASE_URL,
+  paramsSerializer: (params) => qs.stringify(params, { arrayFormat: "repeat" }),
+  headers: {
+    Accept: "application/json",
+  },
+});
+
 class USDAService {
   async searchFoods(query, pageSize = 5) {
     try {
-      const response = await axios.get(`${USDA_BASE_URL}/foods/search`, {
-        params: {
-          api_key: USDA_API_KEY,
-          query: query,
-          pageSize: pageSize,
-          dataType: ["Foundation", "SR Legacy"],
-        },
-      });
+      const params = {
+        api_key: USDA_API_KEY,
+        query,
+        pageSize,
+        dataType: ["Foundation", "SR Legacy"],
+      };
 
-      return response.data.foods || [];
+      let { data } = await client.get("/foods/search", { params });
+
+      if (!data?.foods || !Array.isArray(data.foods)) {
+        const r2 = await client.get("/foods/search", {
+          params: { api_key: USDA_API_KEY, query, pageSize },
+        });
+        data = r2.data;
+      }
+
+      return Array.isArray(data?.foods) ? data.foods : [];
     } catch (error) {
       console.error("Error searching foods:", error);
       throw error;
@@ -35,7 +51,7 @@ class USDAService {
       }
 
       // call API if not in cache
-      const response = await axios.get(`${USDA_BASE_URL}/food/${fdcId}`, {
+      const response = await client.get(`${USDA_BASE_URL}/food/${fdcId}`, {
         params: {
           api_key: USDA_API_KEY,
         },
@@ -52,6 +68,12 @@ class USDAService {
 
   async cachedFoodData(foodData) {
     try {
+      const categorySafe =
+        typeof foodData.foodCategory === "string"
+          ? foodData.foodCategory
+          : foodData.foodCategory?.description ??
+            foodData.foodCategory?.name ??
+            null;
       await prisma.$transaction(async (tx) => {
         // Upsert = Insert or Update if exists
         const usdaFood = await tx.usdaFood.upsert({
@@ -63,7 +85,7 @@ class USDAService {
             description: foodData.description,
             data_type: foodData.dataType,
             brand_name: foodData.brandName || null,
-            category: foodData.foodCategory || null,
+            category: categorySafe,
             raw_data: foodData,
             updated_at: new Date(),
           },
@@ -73,7 +95,7 @@ class USDAService {
             description: foodData.description,
             data_type: foodData.dataType,
             brand_name: foodData.brandName || null,
-            category: foodData.foodCategory || null,
+            category: categorySafe,
             raw_data: foodData,
           },
         });
@@ -94,7 +116,7 @@ class USDAService {
             sugars: nutrition.sugars,
             sodium: nutrition.sodium,
             cholesterol: nutrition.cholesterol,
-            saturatedFat: nutrition.saturated_fat,
+            saturated_fat: nutrition.saturated_fat,
             vitamin_a: nutrition.vitamin_a,
             vitamin_c: nutrition.vitamin_c,
             vitamin_d: nutrition.vitamin_d,
@@ -114,7 +136,7 @@ class USDAService {
             sugars: nutrition.sugars,
             sodium: nutrition.sodium,
             cholesterol: nutrition.cholesterol,
-            saturatedFat: nutrition.saturated_fat,
+            saturated_fat: nutrition.saturated_fat,
             vitamin_a: nutrition.vitamin_a,
             vitamin_c: nutrition.vitamin_c,
             vitamin_d: nutrition.vitamin_d,
