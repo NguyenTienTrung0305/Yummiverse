@@ -2,3 +2,5 @@
 ai/datasets/*
 */node_modules
 .env
+
+ai/vision/models/yolov8s.pt

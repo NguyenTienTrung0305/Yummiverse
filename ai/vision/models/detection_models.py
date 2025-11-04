@@ -90,7 +90,7 @@ class FoodDetectionModel:
     vn_names = data.get('vietnamese_names', {})
     if isinstance(vn_names, list):
       self.vietnamese_names = {i:n for i,n in enumerate(vn_names)}
-    elif isinstance(names, dict):
+    elif isinstance(vn_names, dict):
       self.vietnamese_names = {int(k): v for k,v in vn_names.items()}
 
   
@@ -290,7 +290,7 @@ class FoodDetectionModel:
 
 
 if __name__ == "__main__":
-  cfg = load_config("config.yaml")
+  cfg = load_config("../config/config.yaml")
 
   det = FoodDetectionModel(cfg=cfg)
   det.load_model(None)

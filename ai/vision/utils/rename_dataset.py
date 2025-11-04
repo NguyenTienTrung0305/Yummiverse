@@ -26,12 +26,14 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
     os.makedirs(dst_root, exist_ok=True)
     prefix = get_unique_prefix(dst_root, prefix)
 
-    for split in ["train", "valid", "test"]:
-        img_src = os.path.join(src_root, split, "images")
-        lbl_src = os.path.join(src_root, split, "labels")
+    for split in ["train", "val", "test"]:
+        roboflow_split = "valid" if split == "val" else split
+        
+        img_src = os.path.join(src_root, roboflow_split, "images")
+        lbl_src = os.path.join(src_root, roboflow_split, "labels")
 
-        img_dst = os.path.join(dst_root, split, "images")
-        lbl_dst = os.path.join(dst_root, split, "labels")
+        img_dst = os.path.join(dst_root, "images", split)
+        lbl_dst = os.path.join(dst_root, "labels", split)
         os.makedirs(img_dst, exist_ok=True)
         os.makedirs(lbl_dst, exist_ok=True)
 

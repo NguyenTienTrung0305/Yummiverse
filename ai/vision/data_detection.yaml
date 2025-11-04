@@ -1,6 +1,8 @@
-train: ./datasets/food_detection/images/train
-val: ./datasets/food_detection/images/val
-test: ./datasets/food_detection/images/test
+path: ../Yummiverse/ai/datasets/food_detection
+
+train: images/train
+val: images/val
+test: images/test
 
 nc: 18
 
@@ -43,4 +45,3 @@ vietnamese_names:
   15: hành_tây
   16: trứng
   17: thịt_lợn
-
