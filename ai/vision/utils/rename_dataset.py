@@ -4,7 +4,7 @@ import shutil
 def get_unique_prefix(dst_root, prefix):
     base_prefix = prefix
     counter = 1
-    exts = [".jpg", ".jpeg", ".png"]
+    exts = [".jpg", ".jpeg", ".png", ".webp"]
 
     while True:
         exists = False
@@ -22,7 +22,7 @@ def get_unique_prefix(dst_root, prefix):
 
 
 
-def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
+def rename_and_copy_dataset(src_root, dst_root, prefix="noodle_dry"):
     os.makedirs(dst_root, exist_ok=True)
     prefix = get_unique_prefix(dst_root, prefix)
 
@@ -37,7 +37,7 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
         os.makedirs(img_dst, exist_ok=True)
         os.makedirs(lbl_dst, exist_ok=True)
 
-        images = sorted([f for f in os.listdir(img_src) if f.lower().endswith((".jpg", ".jpeg", ".png"))])
+        images = sorted([f for f in os.listdir(img_src) if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))])
 
         for idx, img_name in enumerate(images, start=1):
             new_name = f"{prefix}_{idx:03d}"
@@ -55,4 +55,9 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="egg"):
             if os.path.exists(old_lbl_path):
                 shutil.copy2(old_lbl_path, new_lbl_path)
 
-rename_and_copy_dataset("/home/ubuntu/Downloads/egg_detection_images", "/home/ubuntu/Workspaces/Yummiverse/datasets/food_detection")
+rename_and_copy_dataset(
+    "C:/Users/ADMIN/Downloads/YUMMI",
+    "D:/Code/Python/Yummiverse/ai/datasets/food_detection",
+    prefix="noodle_dry"
+)
+
