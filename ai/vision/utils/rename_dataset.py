@@ -56,8 +56,9 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="noodle_dry"):
                 shutil.copy2(old_lbl_path, new_lbl_path)
 
 rename_and_copy_dataset(
-    "C:/Users/ADMIN/Downloads/YUMMI",
+    "C:/Users/ADMIN/Downloads/BREAD.v1-bread-images.yolov8",
     "D:/Code/Python/Yummiverse/ai/datasets/food_detection",
-    prefix="noodle_dry"
+    prefix="bread"
 )
 
+# rename dataset and copy to another location that suitable for yolov8 training

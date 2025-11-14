@@ -34,15 +34,16 @@ def main():
         description="Change class IDs in files within a directory."
     )
     parser.add_argument(
-        'labels_dir',
+        '--labels_dir',
         help="Directory containing files .txt (e.g. labels/train)", 
     )
     parser.add_argument(
-        "prefix",
+        "--prefix",
+        default=None,
         help="Prefix of the files to be changed (e.g. 'cucumber' for files like cucumber_*.txt)",
     )
     parser.add_argument(
-        "new_id",
+        "--new_id",
         type=int,
         help="New class ID to set in the files.",
     )
@@ -70,9 +71,13 @@ def main():
     
     
     # create pattern to search for files
-    pattern = f"{args.prefix}_*.{args.ext}"
+    if args.prefix:
+        pattern = f"{args.prefix}_*.{args.ext}"
+    else:
+        pattern = f"*.{args.ext}"
     
     files = labels_dir.rglob(pattern=pattern) if args.recursive else labels_dir.glob(pattern=pattern)
+    files = list(files)
     if not files:
         raise FileNotFoundError(f"No files found with pattern {pattern} in {labels_dir}.")
     
@@ -97,4 +102,11 @@ def main():
             
 if __name__ == "__main__":
     main()
-    
+
+# python batch_change_class_id.py `
+#   --labels_dir "C:/Users/ADMIN/Downloads/YUMMI.v3i.yolov8/train/labels" `
+#   --new_id 0 `
+#   --prefix "noodle_fresh" `
+#   --recursive
+
+# change all class id in files to specified new id (should rename dataset first then use this to change class ids) 
