@@ -102,7 +102,8 @@ if __name__ == "__main__":
 # python mapping_ids.py `
 #   --master_labels "D:/Code/Python/Yummiverse/ai/vision/data_detection.yaml" `
 #   --subset_labels "C:/Users/ADMIN/Downloads/YUMMI.v3i.yolov8/data.yaml" `
-#   --labels_dir "C:/Users/ADMIN/Downloads/YUMMI.v3i.yolov8/train/labels"
+#   --labels_dir "C:/Users/ADMIN/Downloads/YUMMI.v3i.yolov8/train/labels" `
+#   --recursive
 
 
 # change class id in the subset dataset to match the master dataset

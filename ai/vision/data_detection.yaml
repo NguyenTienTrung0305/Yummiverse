@@ -4,7 +4,7 @@ train: images/train
 val: images/val
 test: images/test
 
-nc: 36
+nc: 27
 names:
   0: rice
   1: noodle_dry
@@ -23,25 +23,16 @@ names:
   14: cucumber
   15: carrot
   16: broccoli
-  17: lettuce
-  18: cabbage
-  19: morning_glory
-  20: spinach
-  21: pumpkin
-  22: onion
-  23: shallot
-  24: garlic
-  25: ginger
-  26: chili
-  27: lemon
-  28: lemongrass
-  29: scallion
-  30: cilantro
-  31: fish_sauce
-  32: soy_sauce
-  33: cooking_oil
-  34: milk
-  35: orange
+  17: cabbage
+  18: onion
+  19: shallot
+  20: garlic
+  21: ginger
+  22: chili
+  23: lemon
+  24: lemongrass
+  25: scallion
+  26: milk
 
 vietnamese_names:
   0: gạo
@@ -61,22 +52,13 @@ vietnamese_names:
   14: dưa_chuột
   15: cà_rốt
   16: bông_cải_xanh
-  17: xà_lách
-  18: bắp_cải
-  19: rau_muống
-  20: rau_bina
-  21: bí_đỏ
-  22: hành_tây
-  23: hành_tím
-  24: tỏi
-  25: gừng
-  26: ớt
-  27: chanh
-  28: củ_sả
-  29: hành_lá
-  30: rau_mùi
-  31: nước_mắm
-  32: xì_dầu
-  33: dầu_ăn
-  34: sữa
-  35: cam
+  17: bắp_cải
+  18: hành_tây
+  19: hành_tím
+  20: tỏi
+  21: gừng
+  22: ớt
+  23: chanh
+  24: củ_sả
+  25: hành_lá
+  26: sữa
