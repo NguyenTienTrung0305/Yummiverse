@@ -9,7 +9,7 @@ def get_unique_prefix(dst_root, prefix):
     while True:
         exists = False
         for ext in exts:
-            test_file = os.path.join(dst_root, "train", "images", f"{prefix}_001{ext}")
+            test_file = os.path.join(dst_root, "images", "train", f"{prefix}_000001{ext}")
             if os.path.exists(test_file):
                 exists = True
                 break
@@ -22,7 +22,7 @@ def get_unique_prefix(dst_root, prefix):
 
 
 
-def rename_and_copy_dataset(src_root, dst_root, prefix="noodle_dry"):
+def rename_and_copy_dataset(src_root, dst_root, prefix="0___0"):
     os.makedirs(dst_root, exist_ok=True)
     prefix = get_unique_prefix(dst_root, prefix)
 
@@ -40,7 +40,7 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="noodle_dry"):
         images = sorted([f for f in os.listdir(img_src) if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))])
 
         for idx, img_name in enumerate(images, start=1):
-            new_name = f"{prefix}_{idx:03d}"
+            new_name = f"{prefix}_{idx:06d}"
             ext = os.path.splitext(img_name)[1].lower()
 
             old_img_path = os.path.join(img_src, img_name)
@@ -56,9 +56,9 @@ def rename_and_copy_dataset(src_root, dst_root, prefix="noodle_dry"):
                 shutil.copy2(old_lbl_path, new_lbl_path)
 
 rename_and_copy_dataset(
-    "C:/Users/ADMIN/Downloads/BREAD.v1-bread-images.yolov8",
+    "C:/Users/ADMIN/Downloads/SEGYUM.v3i.yolov8",
     "D:/Code/Python/Yummiverse/ai/datasets/food_detection",
-    prefix="bread"
+    prefix="dataset_ver_1"
 )
 
 # rename dataset and copy to another location that suitable for yolov8 training

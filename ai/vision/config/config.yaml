@@ -1,51 +1,11 @@
 detection_model:
-  name: "yolov8s"
+  name: "yolov8s-seg"
   pretrained: True
-  classes: 18
-
-freshness_model:
-  type: "timm"
-  name: "efficientnet_b2"
-  pretrained: True
-  classes: 3
-  input_size: 224
-
-use_sam2: true # If false, use GrabCut fallback
-sam2:
-  model_type: sam2_hiera_large
-  checkpoint_path: models/sam2_hiera_large.pt
-  device: auto
-  morphology: true
-  preprocess: true
-
-grabcut:
-  iterations: 5
+  classes: 27
 
 volume_estimation:
   aruco_dict: DICT_4x4_50
   reference_size_cm: 10.0
-
-  thickness_cm:
-    default: 2.0
-    thin: 0.3
-    flat: 0.5
-    medium: 2.0
-    thick: 4.0
-    super-thick: 6.0
-    globular: 8.0
-
-  # Density assumptions (g/cm³)
-  # FAO/INFOODS Density Database version 2
-  density_g_per_cm:
-    default: 0.8
-    rice: 0.82
-    meat: 1.08
-    fish: 1.06
-    fruit: 0.87
-    vegetable: 0.42
-    bread: 0.25
-    milk: 1.03
-    noodle: 1.44
 
 training:
   detection:
@@ -53,23 +13,6 @@ training:
     batch_size: 32
     img_size: 640
     patience: 50
-
-  freshness:
-    epochs: 100
-    batch_size: 64
-    img_size: 224
-    patience: 20
-    dropout: 0.3
-
-    label_smoothing: 0.1
-    ema_decay: 0.999
-    amp: true # Automatic Mixed Precision
-
-    mix_stop_ratio: 0.7
-    use_mix: true
-    mix_type: "cutmix"
-    mix_prob: 0.35
-    mix_alpha: 0.2
 
   device: "auto"
   workers: 8
@@ -79,25 +22,14 @@ training:
 # Data Paths
 paths:
   detection_data: "../data_detection.yaml"
-  freshness_data: "../datasets/freshness/"
-  classifier_out_dir: ../runs/classifier
-  detection_out_dir: ../runs/detection
-  sam2_checkpoint: models/sam2_checkpoint.pt
+  detection_out_dir: ../runs
 
 # Optimizer
 optimizer:
   detection:
     name: "AdamW"
-    lr0: 0.01
+    lr0: 0.009
     weight_decay: 0.0005
-
-  freshness:
-    name: "AdamW"
-    lr_backbone: 1e-4
-    lr_head: 1e-3
-    warmup_ratio: 0.1
-    div_factor: 25.0
-    weight_decay: 0.0001
 
 # Augmentation
 augmentation:
@@ -108,29 +40,15 @@ augmentation:
     degrees: 15.0
     fliplr: 0.5
 
-    # turn on if have few data and in final epoch training
-    mixup: 0.1
-    copy_paste: 0.1
-    mosaic: 0.8
-
-  freshness:
-    rotation: 15
-    brightness: 0.2
-    contrast: 0.2
-    saturation: 0.15 # important for freshness
-    hue: 0.03
-    horizontal_flip: 0.5
-    vertical_flip: 0.1
-    blur_prob: 0.12
-    noise_prob: 0.10
-    shadow_prob: 0.10
-    coarse_dropout_prob: 0.05
+    mixup: 0.0
+    copy_paste: 0.3
+    mosaic: 0.9
 
 # Inference
 inference:
   detection_confi: 0.4
   detection_iou: 0.5
   freshness_confi: 0.8
-  crop_margin: 0.08 # expand crop box by 8%
+  crop_margin: 0.08
   tta: true
   ensemble_folds: true
