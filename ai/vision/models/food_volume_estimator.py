@@ -1,7 +1,4 @@
 from math import pi
-from operator import le
-from pyexpat import model
-import re
 from attr import dataclass
 import cv2
 import numpy as np
@@ -45,7 +42,7 @@ class FoodVolumeEstimator:
             device=device
         )
         
-        # densities (g/cm^3) - SAMPLE
+        # densities (g/cm^3)
         self.food_densities = {
             "rice": 0.96,      
             "noodle": 0.80,
@@ -56,6 +53,7 @@ class FoodVolumeEstimator:
             "fruit": 0.70,
             "bread": 0.27,
             "egg": 1.03,
+            "milk": 1.03,
             "default": 0.85
         }
         
@@ -116,23 +114,35 @@ class FoodVolumeEstimator:
         marker_id = int(ids[0][0])
         
         # pose estimation: OpenCV expects marker length in meters
-        rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
-            corners[0], self.aruco_size_m, self.cam.K, self.cam.dist
+        # Marker 3D points
+        marker_points = np.array([
+            [-self.aruco_size_m / 2,  self.aruco_size_m / 2, 0],
+            [ self.aruco_size_m / 2,  self.aruco_size_m / 2, 0],
+            [ self.aruco_size_m / 2, -self.aruco_size_m / 2, 0],
+            [-self.aruco_size_m / 2, -self.aruco_size_m / 2, 0]
+        ], dtype=np.float32)
+
+        retval, rvec, tvec = cv2.solvePnP(
+            marker_points,
+            corners[0][0],
+            self.cam.K,
+            self.cam.dist,
+            flags=cv2.SOLVEPNP_IPPE_SQUARE
         )
         
-        # rvecs cho biết trục xoay của marker trong hệ tọa độ camera
+        # rvec cho biết trục xoay của marker trong hệ tọa độ camera
             # Hướng của rvec → trục xoay (vector)
             # Độ dài của rvec → góc xoay (rad)
         # Marker KHÔNG xoay quanh nhiều trục, mà luôn xoay quanh MỘT trục duy nhất (nhưng trục đó có thể nằm nghiêng giữa X–Y–Z)
-        # rvecs cho biết từ tu thế chuẩn, xoay theo trục nào, với góc bao nhiêu để đến được vị trí hiện tại của marker
+        # rvec cho biết từ tu thế chuẩn, xoay theo trục nào, với góc bao nhiêu để đến được vị trí hiện tại của marker
         # Ví dụ mắt người là camera, 1 cái bảng là marker
             # + tư thế chuẩn là tư thế bảng đặt thẳng đứng vuông góc với mặt đất, mặt bảng hướng về phía người nhìn
             # + nếu bây giờ bảng nghiêng 45 độ về bên phải, thì rvec sẽ cho biết quay quanh trục nào, với góc bao nhiêu để từ tư thế chuẩn đến tư thế hiện tại
-        rvec = rvecs[0].reshape(3)
+        rvec = rvec.reshape(3)
         
         # tvecs là tọa độ của tâm marker trong hệ tọa độ camera, đơn vị mét, trong hệ tọa độ của camera thì trục Oz hướng ra ngoài, Oy hướng lên trên, Ox hướng sang phải
         # ví dụ mình chụp góc 45-60 độ là góc hợp bởi Oz và mặt phẳng bàn mà marker nằm trên
-        tvec = tvecs[0].reshape(3)
+        tvec = tvec.reshape(3)
         
         # draw axis for debug
         cv2.drawFrameAxes(debug, self.cam.K, self.cam.dist, rvec, tvec, self.aruco_size_m * 0.5)
@@ -499,7 +509,7 @@ if __name__ == "__main__":
     estimator = FoodVolumeEstimator(
         cam=cam,
         aruco_size_cm=5.0,
-        depth_model_id="depth-anything/Depth-Anything-V2-Small-hf",
+        depth_model="depth-anything/Depth-Anything-V2-Small-hf",
         pixel_stride=2,          
         marker_sample_stride=3
     )

@@ -21,8 +21,8 @@ training:
 
 # Data Paths
 paths:
-  detection_data: "../data_detection.yaml"
-  detection_out_dir: ../runs
+  detection_data: "D:/Code/Python/Yummiverse/ai/vision/data_detection.yaml"
+  detection_out_dir: "D:/Code/Python/Yummiverse/ai/vision/runs"
 
 # Optimizer
 optimizer:

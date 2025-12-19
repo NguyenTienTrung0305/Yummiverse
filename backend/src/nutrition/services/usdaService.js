@@ -23,7 +23,7 @@ class USDAService {
         api_key: USDA_API_KEY,
         query,
         pageSize,
-        dataType: ["Foundation", "SR Legacy"],
+        dataType: ["Branded", "Foundation", "SR Legacy"],
       };
 
       let { data } = await client.get("/foods/search", { params });
@@ -35,7 +35,27 @@ class USDAService {
         data = r2.data;
       }
 
-      return Array.isArray(data?.foods) ? data.foods : [];
+      let foods = Array.isArray(data?.foods) ? data.foods : [];
+
+      const exactMatch = foods.find(
+        (f) => f.description.toLowerCase() === query.toLowerCase()
+      );
+
+      if (exactMatch) {
+        return [exactMatch];
+      }
+
+      const filteredFoods = foods.filter((f) => {
+        const desc = f.description.toLowerCase();
+        const q = query.toLowerCase();
+        return (
+          desc.startsWith(q) ||
+          desc.includes(` ${q} `) ||
+          desc.endsWith(` ${q}`)
+        );
+      });
+
+      return filteredFoods.length > 0 ? filteredFoods : foods;
     } catch (error) {
       console.error("Error searching foods:", error);
       throw error;
@@ -205,13 +225,12 @@ class USDAService {
 
   async findAndCachedIngredient(ingredientName) {
     try {
-      const searchResults = await this.searchFoods(ingredientName, 5);
+      const searchResults = await this.searchFoods(ingredientName, 10);
       if (searchResults.length === 0) {
         throw new Error("No matching food found in USDA");
       }
 
       const topResults = searchResults[0];
-      const detailFood = await this.getFoodDetails(topResults.fdcId);
 
       return {
         fdcId: topResults.fdcId,
